@@ -85,12 +85,13 @@ export default function LocationPickerScreen() {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
-      // Render map only AFTER permission dialog is resolved to prevent Android GL crashes
-      setShowMap(true);
+      // DO NOT set showMap(true) here! It will render the map while we are still fetching location,
+      // and calling animateToRegion before onMapReady crashes Android.
 
       if (status !== 'granted') {
         setHasLocationPermission(false);
         setIsLocating(false);
+        setShowMap(true);
         return;
       }
       setHasLocationPermission(true);
@@ -100,6 +101,7 @@ export default function LocationPickerScreen() {
       const servicesEnabled = await Location.hasServicesEnabledAsync();
       if (!servicesEnabled) {
         setIsLocating(false);
+        setShowMap(true);
         return;
       }
 
@@ -124,13 +126,15 @@ export default function LocationPickerScreen() {
         };
 
         setRegion(newRegion);
-        mapRef.current?.animateToRegion(newRegion, 800);
+        // Intentionally NOT calling animateToRegion here because the map is not mounted yet.
+        // It will mount with newRegion as initialRegion.
         reverseGeocode(position.coords.latitude, position.coords.longitude);
       }
     } catch (e) {
       console.warn('Location fetch failed:', e);
     } finally {
       setIsLocating(false);
+      setShowMap(true);
     }
   };
 
