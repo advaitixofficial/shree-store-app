@@ -52,7 +52,7 @@ export async function registerForPushNotificationsAsync(projectId?: string): Pro
     console.log('Expo Push Token registered:', token);
 
     // Register push token with backend API
-    await apiClient.post('/customer/users/me/push-token', { pushToken: token }).catch(() => {});
+    await apiClient.post('/customer/user/me/push-token', { pushToken: token }).catch(() => {});
 
     return token;
   } catch (error) {
