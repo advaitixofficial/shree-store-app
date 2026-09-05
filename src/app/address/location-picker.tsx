@@ -62,6 +62,7 @@ export default function LocationPickerScreen() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isLocating, setIsLocating] = useState(true);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,6 +75,7 @@ export default function LocationPickerScreen() {
   // On mount, get current location after transition completes
   useEffect(() => {
     const timer = setTimeout(() => {
+      setShowMap(true);
       getCurrentLocation();
     }, 400); // Wait for screen transition to finish
     return () => clearTimeout(timer);
@@ -299,19 +301,25 @@ export default function LocationPickerScreen() {
   return (
     <View style={styles.container}>
       {/* Map */}
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        initialRegion={region}
-        onRegionChangeComplete={handleRegionChangeComplete}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        toolbarEnabled={false}
-        pitchEnabled={false}
-        mapType="standard"
-      />
+      {showMap ? (
+        <MapView
+          ref={mapRef}
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={region}
+          onRegionChangeComplete={handleRegionChangeComplete}
+          showsUserLocation={false}
+          showsMyLocationButton={false}
+          showsCompass={false}
+          toolbarEnabled={false}
+          pitchEnabled={false}
+          mapType="standard"
+        />
+      ) : (
+        <View style={[styles.map, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      )}
 
       {/* Center Pin (fixed overlay) */}
       <View style={styles.pinContainer} pointerEvents="none">
@@ -465,7 +473,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   map: {
-    ...StyleSheet.absoluteFill as object,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
 
   // Center Pin
