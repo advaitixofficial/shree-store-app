@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "830995635265",
+    "project_id": "shree-store-787c5",
+    "storage_bucket": "shree-store-787c5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:830995635265:android:ff18711730eab776d1bac0",
+        "android_client_info": {
+          "package_name": "com.arishgaxi.shreestores"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPUNEJIYLMTrB_8iAgBsEuglk_cCDJzbM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

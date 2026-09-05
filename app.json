@@ -1,42 +1,76 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Shree Stores",
+    "slug": "shree-store",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "app",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/shree-stores-logo-v2.png",
+    "scheme": "shreestores",
+    "userInterfaceStyle": "light",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/shree-stores-logo-v2.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/images/android-icon-foreground-v2.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.arishgaxi.shreestores",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBiG9vrl2dHT8uGpCxIxbI2VkQ-Xz3q8fE"
+        }
+      }
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/shree-stores-logo-v2.png"
     },
     "plugins": [
       "expo-router",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/shree-stores-logo-v2.png",
+          "color": "#2E7D32"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Shree Stores to access your location to auto-fill delivery address."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/shree-stores-logo-v2.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "react-native-maps",
+        {
+          "androidApiKey": "AIzaSyBiG9vrl2dHT8uGpCxIxbI2VkQ-Xz3q8fE"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1f9f32f3-3384-46b4-a587-7f3f72615bad"
+      }
     }
   }
 }

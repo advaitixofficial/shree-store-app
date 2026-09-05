@@ -1,98 +1,159 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// ============================================================
+// Shree Stores - Splash / Entry Point (Redesigned)
+// Routes to the correct screen based on app state.
+// ============================================================
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useAppStore } from '@/store';
+import { Colors } from '@/constants/colors';
+import { Typography, Spacing } from '@/constants/typography';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Sparkles } from 'lucide-react-native';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+export default function SplashEntry() {
+  const router = useRouter();
+  const { isAppReady, language, isOnboarded, auth } = useAppStore();
+
+  const logoScale = useSharedValue(1);
+  const logoOpacity = useSharedValue(1);
+  const taglineOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // Start entry animations (only fade in the tagline, logo should already be visible to match native splash)
+    taglineOpacity.value = withDelay(400, withTiming(1, { duration: 800 }));
+  }, []);
+
+  useEffect(() => {
+    if (!isAppReady) return;
+
+    // Hide native splash screen
+    SplashScreen.hideAsync().catch(() => {});
+
+    // Determine navigation target and navigate after animations finish
+    const timer = setTimeout(() => {
+      // Scale down a bit before routing for exit transition effect
+      logoScale.value = withTiming(0.95, { duration: 300 });
+      logoOpacity.value = withTiming(0, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(routeUser)();
+        }
+      });
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [isAppReady]);
+
+  const routeUser = () => {
+    if (!isOnboarded) {
+      router.replace('/onboarding/language');
+    } else if (!auth.isAuthenticated) {
+      router.replace('/auth/login');
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
+  const animatedLogoStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: logoScale.value }],
+    opacity: logoOpacity.value,
+  }));
+
+  const animatedTaglineStyle = useAnimatedStyle(() => ({
+    opacity: taglineOpacity.value,
+  }));
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
-
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+    <View style={styles.container}>
+      <View style={styles.content}>
+        <Animated.View style={[styles.logoContainer, animatedLogoStyle]}>
+          <Image 
+            source={require('../../assets/images/shree-stores-logo-v2.png')} 
+            style={{ width: 200, height: 200 }} 
+            resizeMode="contain" 
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        </Animated.View>
+        <Animated.View style={animatedTaglineStyle}>
+          <Text style={styles.tagline}>Sab Kuch, Abhi Ke Abhi</Text>
+        </Animated.View>
+      </View>
+      <View style={styles.footer}>
+        <View style={styles.accentLine}>
+          <View style={[styles.lineSegment, { backgroundColor: Colors.primary }]} />
+          <View style={[styles.lineSegment, { backgroundColor: Colors.orange }]} />
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.background,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  logoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    padding: Spacing.xl,
+  },
+  sparkleIcon: {
+    position: 'absolute',
+    top: 0,
+    right: 20,
+  },
+  logoTextMain: {
+    fontSize: 48,
+    fontFamily: Typography.fontFamily.bold,
+    color: Colors.primary,
+    letterSpacing: 2,
+    lineHeight: 48,
+  },
+  logoTextSub: {
+    fontSize: 24,
+    fontFamily: Typography.fontFamily.semibold,
+    color: Colors.orange,
+    letterSpacing: 8,
+    lineHeight: 24,
+    marginTop: 4,
+    paddingLeft: 8,
+  },
+  tagline: {
+    fontSize: Typography.size.base,
+    fontFamily: Typography.fontFamily.medium,
+    color: Colors.textSecondary,
+    letterSpacing: 1.5,
+    marginTop: Spacing.sm,
+  },
+  footer: {
+    paddingBottom: Spacing['3xl'],
+    alignItems: 'center',
+  },
+  accentLine: {
     flexDirection: 'row',
+    gap: 6,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  lineSegment: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
   },
 });
