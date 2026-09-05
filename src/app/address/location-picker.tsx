@@ -95,11 +95,24 @@ export default function LocationPickerScreen() {
       }
       setHasLocationPermission(true);
 
-      let position = await Location.getLastKnownPositionAsync();
-      if (!position) {
-        position = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+      // Check if location services (GPS) are actually enabled.
+      // Calling position methods while GPS is off causes native crashes on some Android (MIUI) devices.
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        setIsLocating(false);
+        return;
+      }
+
+      let position = null;
+      try {
+        position = await Location.getLastKnownPositionAsync();
+        if (!position) {
+          position = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+        }
+      } catch (e) {
+        console.warn('Position fetch error:', e);
       }
 
       if (position?.coords) {
