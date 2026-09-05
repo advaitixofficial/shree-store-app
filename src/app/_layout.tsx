@@ -22,6 +22,7 @@ function RootNavigator() {
   const insets = useSafeAreaInsets();
   
   const isInsideTabs = 
+    pathname === '/' ||
     pathname === '/(tabs)' || 
     pathname === '/(tabs)/index' || 
     pathname === '/(tabs)/categories' || 
@@ -34,7 +35,7 @@ function RootNavigator() {
     pathname === '/profile';
 
   // 64 is the tab bar base height
-  const bottomOffset = isInsideTabs ? 64 + insets.bottom : 16;
+  const bottomOffset = isInsideTabs ? 64 + insets.bottom : 16 + insets.bottom;
 
   return (
     <View style={{ flex: 1 }}>
