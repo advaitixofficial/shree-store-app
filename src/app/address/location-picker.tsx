@@ -75,7 +75,6 @@ export default function LocationPickerScreen() {
   // On mount, get current location after transition completes
   useEffect(() => {
     const timer = setTimeout(() => {
-      setShowMap(true);
       getCurrentLocation();
     }, 400); // Wait for screen transition to finish
     return () => clearTimeout(timer);
@@ -85,6 +84,10 @@ export default function LocationPickerScreen() {
     setIsLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      // Render map only AFTER permission dialog is resolved to prevent Android GL crashes
+      setShowMap(true);
+
       if (status !== 'granted') {
         setHasLocationPermission(false);
         setIsLocating(false);
