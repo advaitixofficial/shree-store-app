@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, usePathname, useSegments } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Typography, Spacing, BorderRadius, Shadows } from '@/constants/typography';
 import { useTranslation } from '@/i18n';
@@ -21,6 +21,7 @@ interface GlobalFloatingCartProps {
 export function GlobalFloatingCart({ bottomOffset = 0 }: GlobalFloatingCartProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const segments = useSegments();
   const { t } = useTranslation();
   const { getCartTotal } = useAppStore();
 
@@ -28,6 +29,12 @@ export function GlobalFloatingCart({ bottomOffset = 0 }: GlobalFloatingCartProps
 
   // Only show on homepage when cart has items
   if (itemCount === 0) return null;
+
+  // The splash screen and home tab both have pathname === '/'
+  // We can differentiate by checking segments. Splash is usually empty or ['index']
+  // Home tab is usually ['(tabs)', 'index']
+  const isSplashScreen = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
+  if (isSplashScreen) return null;
 
   const isAllowedPath =
     pathname === '/' ||
