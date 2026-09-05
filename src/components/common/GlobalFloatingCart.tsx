@@ -30,11 +30,14 @@ export function GlobalFloatingCart({ bottomOffset = 0 }: GlobalFloatingCartProps
   if (itemCount === 0) return null;
 
   const isAllowedPath =
+    pathname === '/' ||
+    pathname === '/categories' ||
+    pathname.startsWith('/category/') ||
+    // Keep raw route matches just in case
     pathname === '/(tabs)' ||
     pathname === '/(tabs)/index' ||
     pathname === '/(tabs)/' ||
-    pathname === '/(tabs)/categories' ||
-    pathname.startsWith('/category/');
+    pathname === '/(tabs)/categories';
 
   if (!isAllowedPath) return null;
 
