@@ -31,6 +31,15 @@ export default function ProductDetailScreen() {
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const onViewableItemsChanged = React.useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) {
+      setActiveImageIndex(viewableItems[0].index || 0);
+    }
+  }).current;
+
+  const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -97,20 +106,37 @@ export default function ProductDetailScreen() {
         {/* Product Image Section */}
         <View style={styles.imageSection}>
           {product.images && product.images.length > 0 ? (
-            <FlatList
-              data={product.images}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(img, index) => img.publicId || index.toString()}
-              renderItem={({ item: img }) => (
-                <Image
-                  source={{ uri: getProductImage({ ...product, images: [img] }) || img.url }}
-                  style={styles.productDetailImage}
-                  resizeMode="contain"
-                />
+            <>
+              <FlatList
+                data={product.images}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                keyExtractor={(img, index) => img.publicId || index.toString()}
+                renderItem={({ item: img }) => (
+                  <Image
+                    source={{ uri: getProductImage({ ...product, images: [img] }) || img.url }}
+                    style={styles.productDetailImage}
+                    resizeMode="contain"
+                  />
+                )}
+              />
+              {product.images.length > 1 && (
+                <View style={styles.paginationDots}>
+                  {product.images.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.dot,
+                        activeImageIndex === index && styles.activeDot,
+                      ]}
+                    />
+                  ))}
+                </View>
               )}
-            />
+            </>
           ) : getProductImage(product) ? (
             <Image source={{ uri: getProductImage(product)! }} style={styles.productDetailImage} resizeMode="contain" />
           ) : (
@@ -272,6 +298,24 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: Colors.textSecondary,
     fontSize: Typography.size.md,
+  },
+  paginationDots: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+    gap: Spacing.xs,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.border,
+  },
+  activeDot: {
+    backgroundColor: Colors.primary,
+    width: 24,
   },
   discountBadge: {
     position: 'absolute',
