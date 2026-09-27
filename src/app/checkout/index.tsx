@@ -207,15 +207,14 @@ export default function CheckoutScreen() {
           </Pressable>
           
           <Pressable
-            onPress={() => setPaymentMethod('ONLINE')}
-            style={[styles.paymentOption, paymentMethod === 'ONLINE' && styles.paymentOptionActive]}
+            disabled={true}
+            style={[styles.paymentOption, styles.paymentOptionDisabled]}
           >
-            <View style={[styles.radioOuter, paymentMethod === 'ONLINE' && styles.radioOuterActive]}>
-              {paymentMethod === 'ONLINE' ? <View style={styles.radioInner} /> : null}
-            </View>
-            <CreditCard size={22} color={paymentMethod === 'ONLINE' ? Colors.primary : Colors.textSecondary} strokeWidth={2} />
+            <View style={styles.radioOuter} />
+            <CreditCard size={22} color={Colors.textTertiary} strokeWidth={2} />
             <View style={styles.paymentLabelWrapper}>
-              <Text style={[styles.paymentLabel, paymentMethod === 'ONLINE' && styles.paymentLabelActive]}>{t('onlinePayment')}</Text>
+              <Text style={[styles.paymentLabel, { color: Colors.textTertiary }]}>{t('onlinePayment')}</Text>
+              <Text style={styles.comingSoon}>{t('onlinePaymentSoon')}</Text>
             </View>
           </Pressable>
         </View>
@@ -476,3 +475,4 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
+
