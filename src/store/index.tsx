@@ -68,11 +68,11 @@ interface CartState {
 }
 
 type CartAction =
-  | { type: 'ADD_ITEM'; payload: Product }
-  | { type: 'REMOVE_ITEM'; payload: string }
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
-  | { type: 'INCREMENT_QUANTITY'; payload: string }
-  | { type: 'DECREMENT_QUANTITY'; payload: string }
+  | { type: 'ADD_ITEM'; payload: { product: Product; variantId: string } }
+  | { type: 'REMOVE_ITEM'; payload: { productId: string; variantId: string } }
+  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; variantId: string; quantity: number } }
+  | { type: 'INCREMENT_QUANTITY'; payload: { productId: string; variantId: string } }
+  | { type: 'DECREMENT_QUANTITY'; payload: { productId: string; variantId: string } }
   | { type: 'CLEAR_CART' }
   | { type: 'SET_CART'; payload: CartItem[] };
 
@@ -80,38 +80,38 @@ function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
       const existing = state.items.find(
-        (item) => item.product?._id === action.payload._id
+        (item) => item.product?._id === action.payload.product._id && item.variantId === action.payload.variantId
       );
       if (existing) {
         return {
           items: state.items.map((item) =>
-            item.product?._id === action.payload._id
+            (item.product?._id === action.payload.product._id && item.variantId === action.payload.variantId)
               ? { ...item, quantity: item.quantity + 1 }
               : item
           ),
         };
       }
       return {
-        items: [...state.items, { product: action.payload, quantity: 1 }],
+        items: [...state.items, { product: action.payload.product, variantId: action.payload.variantId, quantity: 1 }],
       };
     }
     case 'REMOVE_ITEM':
       return {
         items: state.items.filter(
-          (item) => item.product?._id !== action.payload
+          (item) => !(item.product?._id === action.payload.productId && item.variantId === action.payload.variantId)
         ),
       };
     case 'UPDATE_QUANTITY': {
       if (action.payload.quantity <= 0) {
         return {
           items: state.items.filter(
-            (item) => item.product?._id !== action.payload.productId
+            (item) => !(item.product?._id === action.payload.productId && item.variantId === action.payload.variantId)
           ),
         };
       }
       return {
         items: state.items.map((item) =>
-          item.product?._id === action.payload.productId
+          (item.product?._id === action.payload.productId && item.variantId === action.payload.variantId)
             ? { ...item, quantity: action.payload.quantity }
             : item
         ),
@@ -120,22 +120,22 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case 'INCREMENT_QUANTITY': {
       return {
         items: state.items.map((item) =>
-          item.product?._id === action.payload
+          (item.product?._id === action.payload.productId && item.variantId === action.payload.variantId)
             ? { ...item, quantity: item.quantity + 1 }
             : item
         ),
       };
     }
     case 'DECREMENT_QUANTITY': {
-      const item = state.items.find((i) => i.product?._id === action.payload);
+      const item = state.items.find((i) => i.product?._id === action.payload.productId && i.variantId === action.payload.variantId);
       if (item && item.quantity <= 1) {
         return {
-          items: state.items.filter((i) => i.product?._id !== action.payload),
+          items: state.items.filter((i) => !(i.product?._id === action.payload.productId && i.variantId === action.payload.variantId)),
         };
       }
       return {
         items: state.items.map((i) =>
-          i.product?._id === action.payload
+          (i.product?._id === action.payload.productId && i.variantId === action.payload.variantId)
             ? { ...i, quantity: i.quantity - 1 }
             : i
         ),
@@ -198,14 +198,14 @@ interface AppContextType {
 
   // Cart
   cart: CartState;
-  addToCart: (product: Product) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
-  updateCartQuantity: (productId: string, quantity: number) => Promise<void>;
-  incrementCartQuantity: (productId: string) => void;
-  decrementCartQuantity: (productId: string) => void;
+  addToCart: (product: Product, variantId: string) => Promise<void>;
+  removeFromCart: (productId: string, variantId: string) => Promise<void>;
+  updateCartQuantity: (productId: string, variantId: string, quantity: number) => Promise<void>;
+  incrementCartQuantity: (productId: string, variantId: string) => void;
+  decrementCartQuantity: (productId: string, variantId: string) => void;
   clearCart: () => Promise<void>;
   getCartTotal: () => { subtotal: number; savings: number; itemCount: number };
-  getCartItemQuantity: (productId: string) => number;
+  getCartItemQuantity: (productId: string, variantId: string) => number;
   syncCart: () => Promise<void>;
 
   // Orders
@@ -374,58 +374,58 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [auth.isAuthenticated, syncCart]);
 
-  const addToCart = useCallback(async (product: Product) => {
-    cartDispatch({ type: 'ADD_ITEM', payload: product });
+  const addToCart = useCallback(async (product: Product, variantId: string) => {
+    cartDispatch({ type: 'ADD_ITEM', payload: { product, variantId } });
     if (auth.isAuthenticated) {
-      enqueueCartOp(() => cartApi.addItem(product._id, 1));
+      enqueueCartOp(() => cartApi.addItem(product._id, variantId, 1));
     }
   }, [auth.isAuthenticated, enqueueCartOp]);
 
-  const removeFromCart = useCallback(async (productId: string) => {
-    cartDispatch({ type: 'REMOVE_ITEM', payload: productId });
+  const removeFromCart = useCallback(async (productId: string, variantId: string) => {
+    cartDispatch({ type: 'REMOVE_ITEM', payload: { productId, variantId } });
     if (auth.isAuthenticated) {
-      enqueueCartOp(() => cartApi.removeItem(productId));
+      enqueueCartOp(() => cartApi.removeItem(productId, variantId));
     }
   }, [auth.isAuthenticated, enqueueCartOp]);
 
   const updateCartQuantity = useCallback(
-    async (productId: string, quantity: number) => {
-      cartDispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } });
+    async (productId: string, variantId: string, quantity: number) => {
+      cartDispatch({ type: 'UPDATE_QUANTITY', payload: { productId, variantId, quantity } });
       if (auth.isAuthenticated) {
         if (quantity > 0) {
-          enqueueCartOp(() => cartApi.updateItem(productId, quantity));
+          enqueueCartOp(() => cartApi.updateItem(productId, variantId, quantity));
         } else {
-          enqueueCartOp(() => cartApi.removeItem(productId));
+          enqueueCartOp(() => cartApi.removeItem(productId, variantId));
         }
       }
     },
     [auth.isAuthenticated, enqueueCartOp]
   );
 
-  const incrementCartQuantity = useCallback((productId: string) => {
-    cartDispatch({ type: 'INCREMENT_QUANTITY', payload: productId });
+  const incrementCartQuantity = useCallback((productId: string, variantId: string) => {
+    cartDispatch({ type: 'INCREMENT_QUANTITY', payload: { productId, variantId } });
     if (auth.isAuthenticated) {
       enqueueCartOp(async () => {
         // Read the ACTUAL latest cart state at execution time (not closure time)
         // by getting current cart from the API response of addItem
-        await cartApi.addItem(productId, 1);
+        await cartApi.addItem(productId, variantId, 1);
       });
     }
   }, [auth.isAuthenticated, enqueueCartOp]);
 
-  const decrementCartQuantity = useCallback((productId: string) => {
-    cartDispatch({ type: 'DECREMENT_QUANTITY', payload: productId });
+  const decrementCartQuantity = useCallback((productId: string, variantId: string) => {
+    cartDispatch({ type: 'DECREMENT_QUANTITY', payload: { productId, variantId } });
     if (auth.isAuthenticated) {
       enqueueCartOp(async () => {
         // We need the current quantity. Use getCart to find it.
         const data = await cartApi.getCart();
         const item = data.items.find((i: any) => 
-          (typeof i.product === 'string' ? i.product : i.product?._id) === productId
+          (typeof i.product === 'string' ? i.product : i.product?._id) === productId && i.variantId === variantId
         );
         if (item && item.quantity > 1) {
-          await cartApi.updateItem(productId, item.quantity - 1);
+          await cartApi.updateItem(productId, variantId, item.quantity - 1);
         } else {
-          await cartApi.removeItem(productId);
+          await cartApi.removeItem(productId, variantId);
         }
       });
     }
@@ -444,17 +444,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let itemCount = 0;
     for (const item of cart.items) {
       if (!item.product) continue;
-      subtotal += item.product.price * item.quantity;
-      savings += ((item.product.mrp || item.product.price) - item.product.price) * item.quantity;
+      
+      let price = 0;
+      let mrp = 0;
+
+      // Find the specific variant
+      const variant = item.product.variants?.find(v => v._id === item.variantId);
+      if (variant) {
+        price = variant.price;
+        mrp = variant.mrp || variant.price;
+      } else {
+        // fallback (should not happen if data is consistent)
+        price = 0;
+        mrp = 0;
+      }
+
+      subtotal += price * item.quantity;
+      savings += (mrp - price) * item.quantity;
       itemCount += item.quantity;
     }
     return { subtotal, savings, itemCount };
   }, [cart.items]);
 
   const getCartItemQuantity = useCallback(
-    (productId: string) => {
-      const item = cart.items.find((i) => i.product?._id === productId);
-      return item?.quantity ?? 0;
+    (productId: string, variantId: string) => {
+      const item = cart.items.find(
+        (i) => i.product?._id === productId && i.variantId === variantId
+      );
+      return item ? item.quantity : 0;
     },
     [cart.items]
   );

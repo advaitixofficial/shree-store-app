@@ -26,9 +26,16 @@ export function CartItemComponent({
 }: CartItemComponentProps) {
   const { language } = useTranslation();
   const { incrementCartQuantity, decrementCartQuantity } = useAppStore();
-  const { product, quantity } = item;
+  const { product, quantity, variantId } = item;
   const name = language === 'hi' && product.nameHindi ? product.nameHindi : product.name;
-  const total = product.price * quantity;
+  
+  const variant = product.variants?.find(v => v._id === variantId);
+  const price = variant?.price || 0;
+  const mrp = variant?.mrp || price;
+  const unitValue = variant?.unitValue || '';
+  const unit = variant?.unit || '';
+
+  const total = price * quantity;
   const categoryIdStr = typeof product.category === 'string' 
     ? product.category 
     : (product.category as any)?._id || '';
@@ -48,11 +55,11 @@ export function CartItemComponent({
       {/* Product Details */}
       <View style={styles.details}>
         <Text style={styles.name} numberOfLines={2}>{name}</Text>
-        <Text style={styles.unit}>{product.unitValue} {product.unit}</Text>
+        <Text style={styles.unit}>{unitValue} {unit}</Text>
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatPrice(product.price)}</Text>
-          {product.mrp && product.mrp > product.price ? (
-            <Text style={styles.mrp}>{formatPrice(product.mrp)}</Text>
+          <Text style={styles.price}>{formatPrice(price)}</Text>
+          {mrp > price ? (
+            <Text style={styles.mrp}>{formatPrice(mrp)}</Text>
           ) : null}
         </View>
       </View>
@@ -69,8 +76,8 @@ export function CartItemComponent({
         <Text style={styles.total}>{formatPrice(total)}</Text>
         <QuantitySelector
           quantity={quantity}
-          onIncrease={() => incrementCartQuantity(product._id)}
-          onDecrease={() => decrementCartQuantity(product._id)}
+          onIncrease={() => incrementCartQuantity(product._id, variantId)}
+          onDecrease={() => decrementCartQuantity(product._id, variantId)}
           size="md"
         />
       </View>

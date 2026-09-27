@@ -7,18 +7,18 @@ export const cartApi = {
     return data.data;
   },
 
-  addItem: async (productId: string, quantity: number): Promise<Cart> => {
-    const { data } = await apiClient.post('/customer/cart/items', { productId, quantity });
+  addItem: async (productId: string, variantId: string, quantity: number): Promise<Cart> => {
+    const { data } = await apiClient.post('/customer/cart/items', { productId, variantId, quantity });
     return data.data;
   },
 
-  updateItem: async (productId: string, quantity: number): Promise<Cart> => {
-    const { data } = await apiClient.put(`/customer/cart/items/${productId}`, { quantity });
+  updateItem: async (productId: string, variantId: string, quantity: number): Promise<Cart> => {
+    const { data } = await apiClient.put(`/customer/cart/items/${productId}/${variantId}`, { quantity });
     return data.data;
   },
 
-  removeItem: async (productId: string): Promise<Cart> => {
-    const { data } = await apiClient.delete(`/customer/cart/items/${productId}`);
+  removeItem: async (productId: string, variantId: string): Promise<Cart> => {
+    const { data } = await apiClient.delete(`/customer/cart/items/${productId}/${variantId}`);
     return data.data;
   },
 

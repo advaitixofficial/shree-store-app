@@ -68,14 +68,14 @@ export default function CartScreen() {
 
       <FlatList
         data={cart.items}
-        keyExtractor={(item) => item.product._id}
+        keyExtractor={(item) => item.product._id + '-' + item.variantId}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
         renderItem={({ item }) => (
           <CartItemComponent
             item={item}
-            onRemove={() => removeFromCart(item.product._id)}
+            onRemove={() => removeFromCart(item.product._id, item.variantId)}
           />
         )}
         ItemSeparatorComponent={() => <View style={styles.separator} />}

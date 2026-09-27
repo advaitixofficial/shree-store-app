@@ -33,7 +33,7 @@ export function GlobalFloatingCart({ bottomOffset = 0 }: GlobalFloatingCartProps
   // The splash screen and home tab both have pathname === '/'
   // We can differentiate by checking segments. Splash is usually empty or ['index']
   // Home tab is usually ['(tabs)', 'index']
-  const isSplashScreen = segments.length === 0 || (segments.length === 1 && segments[0] === 'index');
+  const isSplashScreen = !segments.length || (segments.length === 1 && (segments[0] as string) === 'index');
   if (isSplashScreen) return null;
 
   const isAllowedPath =

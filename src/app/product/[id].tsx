@@ -28,6 +28,7 @@ export default function ProductDetailScreen() {
   const { addToCart, incrementCartQuantity, decrementCartQuantity, getCartItemQuantity } = useAppStore();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +51,9 @@ export default function ProductDetailScreen() {
 
         const p = await catalogApi.getProductById(id as string);
         setProduct(p);
+        if (p.variants && p.variants.length > 0) {
+          setSelectedVariantId(p.variants[0]._id);
+        }
 
         // Fetch related products
         const categoryId = typeof p.category === 'string' ? p.category : p.category._id;
@@ -82,10 +86,14 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const quantity = getCartItemQuantity(product._id);
+  const selectedVariant = product.variants?.find(v => v._id === selectedVariantId) || product.variants?.[0] || {
+    price: 0, mrp: 0, unit: '', unitValue: 0, stock: 0, isAvailable: false, _id: ''
+  };
+
+  const quantity = getCartItemQuantity(product._id, selectedVariant._id);
   const name = language === 'hi' && product.nameHindi ? product.nameHindi : product.name;
   const description = language === 'hi' && product.descriptionHindi ? product.descriptionHindi : product.description;
-  const discountPercent = product.mrp ? getDiscountPercent(product.mrp, product.price) : 0;
+  const discountPercent = selectedVariant.mrp ? getDiscountPercent(selectedVariant.mrp, selectedVariant.price) : 0;
   const categoryIdStr = typeof product.category === 'string' ? product.category : product.category._id;
 
   return (
@@ -117,7 +125,7 @@ export default function ProductDetailScreen() {
                 keyExtractor={(img, index) => img.publicId || index.toString()}
                 renderItem={({ item: img }) => (
                   <Image
-                    source={{ uri: getProductImage({ ...product, images: [img] }) || img.url }}
+                    source={{ uri: img.secure_url || img.url }}
                     style={styles.productDetailImage}
                     resizeMode="contain"
                   />
@@ -159,29 +167,55 @@ export default function ProductDetailScreen() {
             {language === 'en' && product.nameHindi ? (
               <Text style={styles.productNameHi}>{product.nameHindi}</Text>
             ) : null}
-            <Text style={styles.unit}>{product.unitValue} {product.unit}</Text>
+            <Text style={styles.unit}>{selectedVariant.unitValue} {selectedVariant.unit}</Text>
           </View>
 
           {/* Pricing */}
           <View style={styles.priceRow}>
             <View style={styles.priceContainer}>
-              <Text style={styles.price}>{formatPrice(product.price)}</Text>
-              {(product.mrp && product.mrp > product.price) ? (
-                <Text style={styles.mrp}>{t('mrp')}: {formatPrice(product.mrp)}</Text>
+              <Text style={styles.price}>{formatPrice(selectedVariant.price)}</Text>
+              {(selectedVariant.mrp && selectedVariant.mrp > selectedVariant.price) ? (
+                <Text style={styles.mrp}>{t('mrp')}: {formatPrice(selectedVariant.mrp)}</Text>
               ) : null}
             </View>
-            {(product.mrp && product.mrp > product.price) ? (
+            {(selectedVariant.mrp && selectedVariant.mrp > selectedVariant.price) ? (
               <View style={styles.saveBadge}>
                 <Text style={styles.saveText}>
-                  {t('youSave')} {formatPrice(product.mrp - product.price)}
+                  {t('youSave')} {formatPrice(selectedVariant.mrp - selectedVariant.price)}
                 </Text>
               </View>
             ) : null}
           </View>
           <Text style={styles.inclusive}>{t('inclusive')}</Text>
 
+          {/* Variants Selector */}
+          {product.variants && product.variants.length > 1 && (
+            <View style={styles.variantsSection}>
+              <Text style={styles.variantsTitle}>Select Quantity</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.variantsList}>
+                {product.variants.map((v) => {
+                  const isSelected = v._id === selectedVariantId;
+                  return (
+                    <Pressable
+                      key={v._id}
+                      style={[styles.variantItem, isSelected && styles.variantItemSelected]}
+                      onPress={() => setSelectedVariantId(v._id)}
+                    >
+                      <Text style={[styles.variantUnit, isSelected && styles.variantUnitSelected]}>
+                        {v.unitValue} {v.unit}
+                      </Text>
+                      <Text style={[styles.variantPrice, isSelected && styles.variantPriceSelected]}>
+                        {formatPrice(v.price)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* Availability */}
-          {!product.isAvailable && (
+          {!selectedVariant.isAvailable && (
             <View style={styles.outOfStockAlert}>
               <AlertCircle size={16} color={Colors.error} />
               <Text style={styles.outOfStockAlertText}>Currently Out of Stock</Text>
@@ -211,12 +245,12 @@ export default function ProductDetailScreen() {
           <View style={styles.bottomBarContent}>
             <QuantitySelector
               quantity={quantity}
-              onIncrease={() => incrementCartQuantity(product._id)}
-              onDecrease={() => decrementCartQuantity(product._id)}
+              onIncrease={() => incrementCartQuantity(product._id, selectedVariant._id)}
+              onDecrease={() => decrementCartQuantity(product._id, selectedVariant._id)}
               size="md"
             />
             <Button
-              title={`${t('cart')} • ${formatPrice(product.price * quantity)}`}
+              title={`${t('cart')} • ${formatPrice(selectedVariant.price * quantity)}`}
               onPress={() => router.push('/(tabs)/cart')}
               size="md"
               style={styles.goToCartButton}
@@ -225,10 +259,10 @@ export default function ProductDetailScreen() {
         ) : (
           <Button
             title={t('addToCart')}
-            onPress={() => addToCart(product)}
+            onPress={() => addToCart(product, selectedVariant._id)}
             fullWidth
             size="lg"
-            disabled={!product.isAvailable}
+            disabled={!selectedVariant.isAvailable}
           />
         )}
       </View>
@@ -462,5 +496,55 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  variantsSection: {
+    marginTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    paddingTop: Spacing.md,
+  },
+  variantsTitle: {
+    fontSize: Typography.size.md,
+    fontFamily: Typography.fontFamily.semibold,
+    fontWeight: Typography.weight.semibold,
+    color: Colors.text,
+    marginBottom: Spacing.sm,
+  },
+  variantsList: {
+    paddingBottom: Spacing.xs,
+  },
+  variantItem: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginRight: Spacing.sm,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  variantItemSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary + '10', // 10% opacity
+  },
+  variantUnit: {
+    fontSize: Typography.size.sm,
+    fontFamily: Typography.fontFamily.medium,
+    fontWeight: Typography.weight.medium,
+    color: Colors.text,
+  },
+  variantUnitSelected: {
+    color: Colors.primary,
+  },
+  variantPrice: {
+    fontSize: Typography.size.sm,
+    fontFamily: Typography.fontFamily.bold,
+    fontWeight: Typography.weight.bold,
+    color: Colors.text,
+    marginTop: 2,
+  },
+  variantPriceSelected: {
+    color: Colors.primary,
   },
 });

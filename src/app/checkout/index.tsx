@@ -151,17 +151,21 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('orderSummary')}</Text>
           <View style={styles.summaryCard}>
-            {cart.items.map((item) => (
-              <View key={item.product._id} style={styles.summaryItem}>
+            {cart.items.map((item) => {
+              const variant = item.product.variants?.find(v => v._id === item.variantId);
+              const price = variant?.price || 0;
+              const unit = variant ? `${variant.unitValue} ${variant.unit}` : '';
+              return (
+              <View key={item.product._id + '-' + item.variantId} style={styles.summaryItem}>
                 <Text style={styles.summaryName} numberOfLines={1}>
-                  {item.product.name}
+                  {item.product.name} ({unit})
                 </Text>
                 <Text style={styles.summaryQty}>x{item.quantity}</Text>
                 <Text style={styles.summaryPrice}>
-                  {formatPrice(item.product.price * item.quantity)}
+                  {formatPrice(price * item.quantity)}
                 </Text>
               </View>
-            ))}
+            )})}
             <View style={styles.divider} />
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>{t('itemTotal')}</Text>

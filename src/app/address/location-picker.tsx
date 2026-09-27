@@ -83,11 +83,8 @@ export default function LocationPickerScreen() {
   const getCurrentLocation = async () => {
     setIsLocating(true);
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
+      const { status } = await Location.getForegroundPermissionsAsync();
       
-      // DO NOT set showMap(true) here! It will render the map while we are still fetching location,
-      // and calling animateToRegion before onMapReady crashes Android.
-
       if (status !== 'granted') {
         setHasLocationPermission(false);
         setIsLocating(false);
@@ -324,7 +321,7 @@ export default function LocationPickerScreen() {
       {showMap ? (
         <MapView
           ref={mapRef}
-          provider={PROVIDER_GOOGLE}
+          provider={Platform.OS === 'ios' ? PROVIDER_GOOGLE : undefined}
           style={styles.map}
           initialRegion={region}
           onRegionChangeComplete={handleRegionChangeComplete}
@@ -350,7 +347,8 @@ export default function LocationPickerScreen() {
         {/* Pin tooltip */}
         <View style={styles.tooltip}>
           <Text style={styles.tooltipText}>Order would be delivered here</Text>
-          <Text style={styles.tooltipSubText}>Move the map to adjust pin</Text>
+          <Text style={styles.tooltipSubText}>Take this pin to its correct position</Text>
+          <View style={styles.tooltipTail} />
         </View>
       </View>
 
@@ -525,14 +523,30 @@ const styles = StyleSheet.create({
   },
   tooltip: {
     position: 'absolute',
-    top: -90,
+    top: -120, // Raised to avoid overlapping with the pin
     backgroundColor: 'rgba(30,30,30,0.92)',
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm + 2,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
-    minWidth: 220,
-    marginLeft: -110,
+    minWidth: 240, // Slightly wider for text
+    marginLeft: -120, // Half of minWidth to keep it centered
+    zIndex: 20,
+  },
+  tooltipTail: {
+    position: 'absolute',
+    bottom: -8,
+    left: '50%',
+    marginLeft: -8,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 8,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: 'rgba(30,30,30,0.92)',
   },
   tooltipText: {
     color: '#FFFFFF',

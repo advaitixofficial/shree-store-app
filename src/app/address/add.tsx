@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { Colors } from '@/constants/colors';
 import { Typography, BorderRadius, Spacing, Shadows } from '@/constants/typography';
 import { useTranslation } from '@/i18n';
@@ -38,7 +39,7 @@ export default function AddAddressScreen() {
   const defaultUserPhone = auth.user?.phone ? auth.user.phone.replace(/[^0-9]/g, '').slice(-10) : '';
 
   const [label, setLabel] = useState<AddressType>(existingAddress?.label ?? 'HOME');
-  const [fullName, setFullName] = useState(existingAddress?.fullName ?? auth.user?.name ?? '');
+  const [fullName, setFullName] = useState(existingAddress?.fullName ?? (auth.user ? `${auth.user.firstName} ${auth.user.lastName || ''}`.trim() : ''));
   const [phone, setPhone] = useState(existingAddress?.phone ?? defaultUserPhone);
   const [addressLine1, setAddressLine1] = useState(existingAddress?.addressLine1 ?? '');
   const [addressLine2, setAddressLine2] = useState(existingAddress?.addressLine2 ?? '');
@@ -55,7 +56,7 @@ export default function AddAddressScreen() {
   // Sync auth user details if creating new address and state was empty
   useEffect(() => {
     if (!existingAddress && auth.user) {
-      if (!fullName.trim() && auth.user.name) setFullName(auth.user.name);
+      if (!fullName.trim() && auth.user.firstName) setFullName(auth.user.firstName + (auth.user.lastName ? ' ' + auth.user.lastName : ''));
       if (!phone.trim() && auth.user.phone) {
         setPhone(auth.user.phone.replace(/[^0-9]/g, '').slice(-10));
       }
@@ -152,11 +153,41 @@ export default function AddAddressScreen() {
     }
   };
 
-  const handleOpenLocationPicker = () => {
-    router.push({
-      pathname: '/address/location-picker',
-      params: params.id ? { id: params.id } : {},
-    });
+  const handleOpenLocationPicker = async () => {
+    setLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Permission to access location was denied');
+        return;
+      }
+      
+      let servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) {
+        if (Platform.OS === 'android') {
+          try {
+            await Location.enableNetworkProviderAsync();
+            servicesEnabled = await Location.hasServicesEnabledAsync();
+          } catch (e) {
+            // User denied or it failed.
+          }
+        }
+        
+        if (!servicesEnabled) {
+          Alert.alert('Location Disabled', 'Please enable location services (GPS) from settings to use this feature');
+          return;
+        }
+      }
+      
+      router.push({
+        pathname: '/address/location-picker',
+        params: params.id ? { id: params.id } : {},
+      });
+    } catch (e) {
+      console.warn('Location permission error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getTypeIcon = (optionType: AddressType, isActive: boolean) => {

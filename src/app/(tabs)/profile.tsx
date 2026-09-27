@@ -53,9 +53,9 @@ export default function ProfileScreen() {
   ];
 
   const supportMenuItems: ProfileMenuItem[] = [
-    { icon: <HelpCircle size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('helpSupport'), onPress: () => {}, showArrow: true },
-    { icon: <FileText size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('termsConditions'), onPress: () => {}, showArrow: true },
-    { icon: <Shield size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('privacyPolicy'), onPress: () => {}, showArrow: true },
+    { icon: <HelpCircle size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('helpSupport'), onPress: () => router.push('/support'), showArrow: true },
+    { icon: <FileText size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('termsConditions'), onPress: () => router.push('/terms'), showArrow: true },
+    { icon: <Shield size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('privacyPolicy'), onPress: () => router.push('/terms'), showArrow: true },
     { icon: <Info size={18} color={Colors.textSecondary} strokeWidth={2} />, label: t('aboutUs'), onPress: () => {}, showArrow: true },
   ];
 

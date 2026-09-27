@@ -15,22 +15,29 @@ export interface User {
   updatedAt: string;
 }
 
+export interface ProductVariant {
+  _id: string;
+  unit: string;
+  unitValue: number;
+  price: number;
+  mrp?: number;
+  stock: number;
+  sku?: string;
+  isAvailable: boolean;
+}
+
 export interface Product {
   _id: string;
   name: string;
   nameHindi?: string;
   description: string;
   descriptionHindi?: string;
-  price: number;
-  mrp?: number;
+  variants: ProductVariant[];
   discountType?: 'PERCENTAGE' | 'FIXED';
   discountValue?: number;
-  unit: string;
-  unitValue: number;
   images: { url: string; publicId: string }[];
   thumbnail?: { url: string; publicId: string };
   category: string | Category; // Depends on population
-  stock: number;
   isAvailable: boolean;
   isFeatured: boolean;
   searchKeywords?: string[];
@@ -50,6 +57,7 @@ export interface Category {
 
 export interface CartItem {
   product: Product;
+  variantId: string;
   quantity: number;
 }
 
@@ -97,11 +105,13 @@ export type OrderStatus =
 
 export interface OrderItem {
   productId: string;
+  variantId?: string;
   productName: string;
   productNameHindi: string;
   image?: { url: string; publicId: string };
   quantity: number;
   unit: string;
+  unitValue?: number;
   price: number;
   mrp: number;
   total: number;

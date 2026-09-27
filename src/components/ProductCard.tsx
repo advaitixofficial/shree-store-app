@@ -30,15 +30,16 @@ function ProductCardComponent({ product, onPress, width = 140 }: ProductCardProp
   const { language } = useTranslation();
   const { addToCart, incrementCartQuantity, decrementCartQuantity, getCartItemQuantity } = useAppStore();
   
-  const quantity = getCartItemQuantity(product._id);
+  const variant = product.variants?.[0] || { price: 0, mrp: 0, unit: '', unitValue: 0, stock: 0, isAvailable: false, _id: '' };
+  const quantity = getCartItemQuantity(product._id, variant._id);
   const name = language === 'hi' && product.nameHindi ? product.nameHindi : product.name;
-  const discountPercent = product.mrp ? getDiscountPercent(product.mrp, product.price) : 0;
+  const discountPercent = variant.mrp ? getDiscountPercent(variant.mrp, variant.price) : 0;
   
   const categoryId = typeof product.category === 'string' ? product.category : (product.category as any)?._id || '';
   const imageUrl = getProductImage(product);
 
   const handleAdd = () => {
-    if (product.isAvailable) addToCart(product);
+    if (variant.isAvailable) addToCart(product, variant._id);
   };
 
   return (
@@ -61,7 +62,7 @@ function ProductCardComponent({ product, onPress, width = 140 }: ProductCardProp
           </View>
         )}
         
-        {!product.isAvailable && (
+        {!variant.isAvailable && (
           <View style={styles.outOfStockOverlay}>
             <View style={styles.outOfStockBadge}>
               <Text style={styles.outOfStockText}>Out of Stock</Text>
@@ -74,15 +75,15 @@ function ProductCardComponent({ product, onPress, width = 140 }: ProductCardProp
       <View style={styles.info}>
         <View style={styles.titleContainer}>
           <Text style={styles.name} numberOfLines={2}>{name}</Text>
-          <Text style={styles.unit}>{product.unitValue || 1} {product.unit}</Text>
+          <Text style={styles.unit}>{variant.unitValue || 1} {variant.unit}</Text>
         </View>
 
         {/* Price & Action */}
         <View style={styles.bottomRow}>
           <View style={styles.prices}>
-            <Text style={styles.price}>{formatPrice(product.price)}</Text>
-            {product.mrp && product.mrp > product.price && (
-              <Text style={styles.mrp}>{formatPrice(product.mrp)}</Text>
+            <Text style={styles.price}>{formatPrice(variant.price)}</Text>
+            {variant.mrp && variant.mrp > variant.price && (
+              <Text style={styles.mrp}>{formatPrice(variant.mrp)}</Text>
             )}
           </View>
 
@@ -90,18 +91,18 @@ function ProductCardComponent({ product, onPress, width = 140 }: ProductCardProp
             {quantity > 0 ? (
               <QuantitySelector
                 quantity={quantity}
-                onIncrease={() => incrementCartQuantity(product._id)}
-                onDecrease={() => decrementCartQuantity(product._id)}
+                onIncrease={() => incrementCartQuantity(product._id, variant._id)}
+                onDecrease={() => decrementCartQuantity(product._id, variant._id)}
                 size="sm"
               />
             ) : (
               <Pressable
                 onPress={handleAdd}
-                disabled={!product.isAvailable}
+                disabled={!variant.isAvailable}
                 style={({ pressed }) => [
                   styles.addButton,
                   pressed && styles.addButtonPressed,
-                  !product.isAvailable && styles.addButtonDisabled,
+                  !variant.isAvailable && styles.addButtonDisabled,
                 ]}
               >
                 <Text style={styles.addButtonText}>ADD</Text>
