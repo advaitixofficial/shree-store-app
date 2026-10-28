@@ -16,11 +16,18 @@ const baseURL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const apiClient = axios.create({
   baseURL,
-  timeout: 30000, // 30 seconds default timeout
+  timeout: 60000, // 60 seconds timeout to handle Render cold-start smoothly
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+/**
+ * Fire-and-forget pre-warming ping to wake up sleeping backend on Render
+ */
+export const warmUpServer = () => {
+  apiClient.get('/health', { timeout: 60000 }).catch(() => {});
+};
 
 // A separate client for refreshing token to avoid interceptor loops
 const tokenClient = axios.create({

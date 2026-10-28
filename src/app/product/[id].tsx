@@ -125,7 +125,7 @@ export default function ProductDetailScreen() {
                 keyExtractor={(img, index) => img.publicId || index.toString()}
                 renderItem={({ item: img }) => (
                   <Image
-                    source={{ uri: img.secure_url || img.url }}
+                    source={{ uri: (img as any).secure_url || img.url }}
                     style={styles.productDetailImage}
                     resizeMode="contain"
                   />

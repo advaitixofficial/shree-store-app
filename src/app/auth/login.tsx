@@ -13,6 +13,7 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Sparkles } from 'lucide-react-native';
 import { authApi } from '@/api/auth';
+import { warmUpServer } from '@/api/client';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -21,6 +22,11 @@ export default function LoginScreen() {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Pre-warm server when user arrives at login screen
+  React.useEffect(() => {
+    warmUpServer();
+  }, []);
 
   const handleSendOtp = async () => {
     if (phone.length !== 10) {
@@ -33,7 +39,24 @@ export default function LoginScreen() {
       await authApi.sendOtp(phone);
       router.push({ pathname: '/auth/otp', params: { phone } });
     } catch (e: any) {
-      setError(e.message || 'Failed to send OTP');
+      // Auto-retry once silently if Render server was sleeping/connecting
+      const isConnectionIssue = e.message && (
+        e.message.includes('connect to the server') || 
+        e.message.includes('took too long') || 
+        e.message.includes('Network Error')
+      );
+      if (isConnectionIssue) {
+        try {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await authApi.sendOtp(phone);
+          router.push({ pathname: '/auth/otp', params: { phone } });
+          return;
+        } catch (retryErr: any) {
+          setError(retryErr.message || 'Failed to send OTP');
+        }
+      } else {
+        setError(e.message || 'Failed to send OTP');
+      }
     } finally {
       setLoading(false);
     }

@@ -151,6 +151,17 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 }
 
 // ── Orders State ──────────────────────────────────────────────
+export interface PickedLocationData {
+  latitude: number;
+  longitude: number;
+  street: string;
+  area: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  houseInfo?: string;
+}
+
 interface OrdersState {
   orders: Order[];
   loading: boolean;
@@ -220,6 +231,10 @@ interface AppContextType {
   setDefaultAddress: (id: string) => Promise<void>;
   syncAddresses: () => Promise<void>;
 
+  // Inter-screen picked location
+  pickedLocation: PickedLocationData | null;
+  setPickedLocation: (location: PickedLocationData | null) => void;
+
   // Recent Searches
   recentSearches: string[];
   addRecentSearch: (query: string) => Promise<void>;
@@ -239,6 +254,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isOnboarded, setIsOnboardedState] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [pickedLocation, setPickedLocation] = useState<PickedLocationData | null>(null);
 
   const [auth, authDispatch] = useReducer(authReducer, {
     isAuthenticated: false,
@@ -620,6 +636,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addRecentSearch,
     clearRecentSearches,
     isAppReady,
+    pickedLocation,
+    setPickedLocation,
   };
 
   return (

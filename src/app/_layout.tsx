@@ -14,6 +14,7 @@ import {
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { GlobalFloatingCart } from '@/components/common/GlobalFloatingCart';
+import { warmUpServer } from '@/api/client';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -71,6 +72,10 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  React.useEffect(() => {
+    warmUpServer();
+  }, []);
+
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,

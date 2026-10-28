@@ -23,6 +23,7 @@ import * as Location from 'expo-location';
 import { Colors } from '@/constants/colors';
 import { Typography, BorderRadius, Spacing, Shadows } from '@/constants/typography';
 import { useTranslation } from '@/i18n';
+import { useAppStore } from '@/store';
 import { ArrowLeft, Search, X, Navigation, MapPin } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -49,6 +50,7 @@ export default function LocationPickerScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const { setPickedLocation } = useAppStore();
   const mapRef = useRef<any>(null);
 
   const [region, setRegion] = useState<Region>({
@@ -298,21 +300,26 @@ export default function LocationPickerScreen() {
   };
 
   const handleConfirmLocation = () => {
-    // Pass data back via router params
-    router.navigate({
-      pathname: '/address/add',
-      params: {
-        ...(params.id ? { id: params.id } : {}),
-        pickedLat: region.latitude.toString(),
-        pickedLng: region.longitude.toString(),
-        pickedStreet: geocodedAddress?.street || '',
-        pickedArea: geocodedAddress?.area || '',
-        pickedCity: geocodedAddress?.city || '',
-        pickedState: geocodedAddress?.state || '',
-        pickedPostalCode: geocodedAddress?.postalCode || '',
-        pickedHouseInfo: geocodedAddress?.houseInfo || '',
-      },
+    // Pass location back to add.tsx via store and pop the map screen cleanly
+    setPickedLocation({
+      latitude: region.latitude,
+      longitude: region.longitude,
+      street: geocodedAddress?.street || '',
+      area: geocodedAddress?.area || '',
+      city: geocodedAddress?.city || '',
+      state: geocodedAddress?.state || '',
+      postalCode: geocodedAddress?.postalCode || '',
+      houseInfo: geocodedAddress?.houseInfo || '',
     });
+
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace({
+        pathname: '/address/add',
+        params: params.id ? { id: params.id } : {},
+      });
+    }
   };
 
   return (

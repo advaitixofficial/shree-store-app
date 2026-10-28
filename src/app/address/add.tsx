@@ -31,7 +31,7 @@ export default function AddAddressScreen() {
     pickedHouseInfo?: string;
   }>();
   const { t } = useTranslation();
-  const { auth, addresses, addAddress, updateAddress } = useAppStore();
+  const { auth, addresses, addAddress, updateAddress, pickedLocation, setPickedLocation } = useAppStore();
 
   const existingAddress = params.id ? addresses.find((a) => a._id === params.id) : undefined;
   const isEdit = !!existingAddress;
@@ -63,7 +63,29 @@ export default function AddAddressScreen() {
     }
   }, [auth.user]);
 
-  // Receive data back from the location picker
+    // Receive data back from the location picker via store
+  useEffect(() => {
+    if (pickedLocation) {
+      setLatitude(pickedLocation.latitude);
+      setLongitude(pickedLocation.longitude);
+      setLocationPicked(true);
+      if (pickedLocation.street) setAddressLine2(pickedLocation.street);
+      if (pickedLocation.area) setLandmark(pickedLocation.area);
+      if (pickedLocation.city) setCity(pickedLocation.city);
+      if (pickedLocation.state) setStateName(pickedLocation.state);
+      if (pickedLocation.postalCode && pickedLocation.postalCode.trim()) {
+        const cleanPin = pickedLocation.postalCode.replace(/[^0-9]/g, '');
+        if (cleanPin.length === 6) {
+          setPostalCode(cleanPin);
+        }
+      }
+      if (pickedLocation.houseInfo) setAddressLine1(pickedLocation.houseInfo);
+      setErrors({});
+      setPickedLocation(null);
+    }
+  }, [pickedLocation]);
+
+  // Receive data back from the location picker (fallback params)
   useEffect(() => {
     if (params.pickedLat && params.pickedLng) {
       const lat = parseFloat(params.pickedLat);
@@ -143,7 +165,11 @@ export default function AddAddressScreen() {
       } else {
         await addAddress(addressData);
       }
-      router.back();
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/address');
+      }
     } catch (err: any) {
       console.error('Save address error:', err);
       const errMsg = err?.response?.data?.message || err?.message || 'Failed to save address';
