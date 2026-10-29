@@ -13,15 +13,25 @@ import { useAppStore } from '@/store';
 import { CartItemComponent } from '@/components/CartItem';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
-import { formatPrice, getDeliveryFee, defaultStoreSettings } from '@/services/location';
+import { formatPrice, getDeliveryFee, calculateDistance, defaultStoreSettings } from '@/services/location';
 import { ShoppingBag, Sparkles, AlertCircle } from 'lucide-react-native';
 
 export default function CartScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { cart, removeFromCart, getCartTotal, syncCart } = useAppStore();
+  const { cart, addresses, removeFromCart, getCartTotal, syncCart } = useAppStore();
   const { subtotal, savings, itemCount } = getCartTotal();
-  const deliveryFee = getDeliveryFee(subtotal);
+
+  // Calculate distance using default address if available
+  const defaultAddress = addresses?.find((a) => a.isDefault) || addresses?.[0];
+  const distanceKm = defaultAddress ? calculateDistance(
+    defaultStoreSettings.storeLatitude,
+    defaultStoreSettings.storeLongitude,
+    defaultAddress.latitude,
+    defaultAddress.longitude
+  ) : 0;
+
+  const deliveryFee = getDeliveryFee(subtotal, distanceKm);
   const grandTotal = subtotal + deliveryFee;
   const [refreshing, setRefreshing] = useState(false);
 

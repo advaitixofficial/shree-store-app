@@ -15,7 +15,7 @@ export const defaultStoreSettings: StoreSettings & { deliveryTiers?: { maxDistan
   storeLongitude: 82.9739,
   deliveryRadiusKm: 40,
   deliveryFee: 0,
-  freeDeliveryAbove: 300,
+  freeDeliveryAbove: 249,
   minOrderAmount: 100,
   deliveryTiers: [
     { maxDistance: 20, fee: 30 },
@@ -81,14 +81,12 @@ export function getDeliveryFee(
   distanceKm: number = 0,
   settings: typeof defaultStoreSettings = defaultStoreSettings
 ): number {
-  if (subtotal >= settings.freeDeliveryAbove) {
+  // If order meets or exceeds free delivery minimum, delivery is ALWAYS FREE
+  if (settings.freeDeliveryAbove > 0 && subtotal >= settings.freeDeliveryAbove) {
     return 0;
   }
 
-  if (distanceKm <= 10) {
-    return 0;
-  }
-
+  // Tiered delivery based on distance
   if (settings.deliveryTiers && settings.deliveryTiers.length > 0) {
     const sortedTiers = [...settings.deliveryTiers].sort((a, b) => a.maxDistance - b.maxDistance);
     for (const tier of sortedTiers) {
@@ -98,7 +96,7 @@ export function getDeliveryFee(
     }
   }
 
-  return settings.deliveryFee;
+  return settings.deliveryFee || 30;
 }
 
 /**
